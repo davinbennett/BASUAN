@@ -7,12 +7,11 @@ import java.time.LocalDate;
 import java.time.Period;
 import java.sql.Date;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.InputMismatchException;
 import java.util.Scanner;
 
 
-// Press Shift twice to open the Search Everywhere dialog and type `show whitespaces`,
-// then press Enter. You can now see whitespace characters in your code.
 public class Main {
     private final Connect connect = Connect.getInstance();
     public Scanner sc = new Scanner(System.in);
@@ -24,13 +23,6 @@ public class Main {
         String nama = "", kodeAkses = "", verifyKode = "", alamat = "";
 
         // VALIDATE REGISTER
-        System.out.println("========================================================================================");
-        System.out.println("|------\\        /---\\        /-----------|   |--|  |--|        /---\\        |----\\  |--|");
-        System.out.println("|  |\\   |      /  /\\ \\       |  /--------|   |  |  |  |       /  /\\ \\       |     \\ |  |");
-        System.out.println("|    __/      /  /__\\ \\      |  \\________    |  |  |  |      /  /__\\ \\      |  |\\  \\|  |");
-        System.out.println("|   _  \\     /  _____  \\     |_________  |   |  |  |  |     /  _____  \\     |  | \\     |");
-        System.out.println("|  |_\\  |   /  /     \\  \\    _________|  |   |  \\__/  |    /  /     \\  \\    |  |  \\    |");
-        System.out.println("|------/   /__/       \\__\\   |___________/   \\________/   /__/       \\__\\   |__|   \\___|");
         System.out.println("========================================================================================");
         System.out.println("                                     R E G I S T E R");
         System.out.println("========================================================================================");
@@ -60,34 +52,32 @@ public class Main {
 
         cls();
         System.out.println("========================================================================================");
-        System.out.println("|------\\        /---\\        /-----------|   |--|  |--|        /---\\        |----\\  |--|");
-        System.out.println("|  |\\   |      /  /\\ \\       |  /--------|   |  |  |  |       /  /\\ \\       |     \\ |  |");
-        System.out.println("|    __/      /  /__\\ \\      |  \\________    |  |  |  |      /  /__\\ \\      |  |\\  \\|  |");
-        System.out.println("|   _  \\     /  _____  \\     |_________  |   |  |  |  |     /  _____  \\     |  | \\     |");
-        System.out.println("|  |_\\  |   /  /     \\  \\    _________|  |   |  \\__/  |    /  /     \\  \\    |  |  \\    |");
-        System.out.println("|------/   /__/       \\__\\   |___________/   \\________/   /__/       \\__\\   |__|   \\___|");
-        System.out.println("========================================================================================");
         System.out.println("                                     R E G I S T E R");
         System.out.println("========================================================================================");
         System.out.println("                Lengkapi biodata anda untuk melanjutkan proses registrasi\n");
 
         System.out.print("Masukkan Alamat: ");
         alamat = sc.nextLine();
-        boolean validInput = false;
-        Date dobSQL = null;
-        while (!validInput) {
-            System.out.print("Masukkan tanggal lahir [dd/MM/yy]: ");
-            String inputDOB = sc.nextLine();
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        dateFormat.setLenient(false);
 
-            SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yy");
-            dateFormat.setLenient(false);
+        Date sqlDate = null;
+        boolean formatBenar = false;
+        java.util.Date tanggalLahir = null;
+        while (!formatBenar) {
+            System.out.print("Masukkan tanggal lahir [yyyy-mm-dd]: ");
+            String inputTanggal = sc.next();
 
             try {
-                dobSQL = (Date) dateFormat.parse(inputDOB);
+                java.util.Date date = dateFormat.parse(inputTanggal);
+                tanggalLahir = new java.util.Date(date.getTime());
 
-                // Validasi umur minimal regist
-                LocalDate tanggalLahir = dobSQL.toLocalDate();
-                Period selisih = Period.between(tanggalLahir, LocalDate.now());
+//              Validasi umur minimal 17
+                String dateTemp = dateFormat.format(tanggalLahir);
+                DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+                LocalDate localDateTemp = LocalDate.parse(dateTemp, dateFormatter);
+
+                Period selisih = Period.between(localDateTemp, LocalDate.now());
                 if (selisih.getYears() < 17) {
                     System.out.println("Maaf, umur Anda belum cukup untuk membuka rekening. Minimal 17 tahun untuk membuka rekening.");
                     System.out.println("Silakan kembali apabila umur Anda sudah mencukupi.");
@@ -95,12 +85,12 @@ public class Main {
                     sc.nextLine();
                     return;
                 }
-
-                validInput = true; // Input valid, keluar dari loop
+                sqlDate = Date.valueOf(localDateTemp);
+                formatBenar = true;
 
             } catch (ParseException e) {
-                System.out.println("Format tanggal yang Anda masukkan salah. Gunakan format dd/MM/yy.");
-                System.out.println("Silakan coba lagi.");
+                System.out.println("Format tanggal yang Anda masukkan salah. Gunakan format yyyy/mm/dd.");
+                System.out.println("Silakan coba lagi.\n");
             }
         }
 
@@ -113,10 +103,10 @@ public class Main {
         String rekening = "";
         rekening = String.valueOf(tes);
 
-        // input data ke database
-        Nasabah nasabah = new Nasabah(nama, alamat, dobSQL);
+//      input data ke database
+        Nasabah nasabah = new Nasabah(nama, alamat, sqlDate);
         Akun akun = new Akun(rekening,0.00, kodeAkses);
-        nasabah.insertCustomer(nama, alamat, dobSQL);
+        nasabah.insertCustomer(nama, alamat, sqlDate);
         akun.insertAkun(rekening, kodeAkses);
 
         System.out.println("Akun berhasil dibuat.\nSilahkan login kembali untuk akun yang telah anda buat.\nKlik Enter untuk lanjut Menu Utama.");
@@ -128,13 +118,6 @@ public class Main {
         while(true) {
             choice = 0;
             System.out.println("========================================================================================");
-            System.out.println("|------\\        /---\\        /-----------|   |--|  |--|        /---\\        |----\\  |--|");
-            System.out.println("|  |\\   |      /  /\\ \\       |  /--------|   |  |  |  |       /  /\\ \\       |     \\ |  |");
-            System.out.println("|    __/      /  /__\\ \\      |  \\________    |  |  |  |      /  /__\\ \\      |  |\\  \\|  |");
-            System.out.println("|   _  \\     /  _____  \\     |_________  |   |  |  |  |     /  _____  \\     |  | \\     |");
-            System.out.println("|  |_\\  |   /  /     \\  \\    _________|  |   |  \\__/  |    /  /     \\  \\    |  |  \\    |");
-            System.out.println("|------/   /__/       \\__\\   |___________/   \\________/   /__/       \\__\\   |__|   \\___|");
-            System.out.println("========================================================================================");
             System.out.println("                            Selamat Datang di Basuan Mobile");
             System.out.println("========================================================================================");
             System.out.print("\n1. Cek Profile\n2. Transaksi\n3. Kembali\n> ");
@@ -143,13 +126,6 @@ public class Main {
                 case 1:
                     cls();
                     int choose = 0;
-                    System.out.println("========================================================================================");
-                    System.out.println("|------\\        /---\\        /-----------|   |--|  |--|        /---\\        |----\\  |--|");
-                    System.out.println("|  |\\   |      /  /\\ \\       |  /--------|   |  |  |  |       /  /\\ \\       |     \\ |  |");
-                    System.out.println("|    __/      /  /__\\ \\      |  \\________    |  |  |  |      /  /__\\ \\      |  |\\  \\|  |");
-                    System.out.println("|   _  \\     /  _____  \\     |_________  |   |  |  |  |     /  _____  \\     |  | \\     |");
-                    System.out.println("|  |_\\  |   /  /     \\  \\    _________|  |   |  \\__/  |    /  /     \\  \\    |  |  \\    |");
-                    System.out.println("|------/   /__/       \\__\\   |___________/   \\________/   /__/       \\__\\   |__|   \\___|");
                     System.out.println("========================================================================================");
                     System.out.println("                                      P R O F I L E");
                     System.out.println("========================================================================================");
@@ -194,13 +170,6 @@ public class Main {
     public void loginMenu() throws SQLException{
         String kode = "", name = "";
         int flag, count = 1;
-        System.out.println("========================================================================================");
-        System.out.println("|------\\        /---\\        /-----------|   |--|  |--|        /---\\        |----\\  |--|");
-        System.out.println("|  |\\   |      /  /\\ \\       |  /--------|   |  |  |  |       /  /\\ \\       |     \\ |  |");
-        System.out.println("|    __/      /  /__\\ \\      |  \\________    |  |  |  |      /  /__\\ \\      |  |\\  \\|  |");
-        System.out.println("|   _  \\     /  _____  \\     |_________  |   |  |  |  |     /  _____  \\     |  | \\     |");
-        System.out.println("|  |_\\  |   /  /     \\  \\    _________|  |   |  \\__/  |    /  /     \\  \\    |  |  \\    |");
-        System.out.println("|------/   /__/       \\__\\   |___________/   \\________/   /__/       \\__\\   |__|   \\___|");
         System.out.println("========================================================================================");
         System.out.println("                                       L O G I N");
         System.out.println("========================================================================================");
