@@ -38,13 +38,14 @@ public class Akun implements AkunSQL{
     }
 
     @Override
-    public void insertAkun(String rekening, String kodeAkses) throws SQLException {
-        String query = "INSERT INTO Akun(Rekening, KodeAkses) " +
-                "VALUES(?, ?)";
+    public void insertAkun(String nasabahID, String rekening, String kodeAkses) throws SQLException {
+        String query = "INSERT INTO Akun(NasabahID, Rekening, KodeAkses) " +
+                "VALUES(?, ?, ?)";
         PreparedStatement ps = connect.preparedStatement(query);
         try {
-            ps.setString(1, rekening);
-            ps.setString(2, kodeAkses);
+            ps.setString(1, nasabahID);
+            ps.setString(2, rekening);
+            ps.setString(3, kodeAkses);
 
             ps.execute();
         } catch (SQLException e) {
@@ -53,7 +54,22 @@ public class Akun implements AkunSQL{
     }
 
     @Override
-    public void updateAkun(Double Saldo, String KodeAkses) throws SQLException {
+    public void updateKode(String kodeNew, String kodeOld, String namaOld) throws SQLException {
+        String query = "UPDATE Nasabah AS N JOIN Akun AS A ON N.NasabahID = A.NasabahID " +
+                "SET KodeAkses = ? " +
+                "WHERE Nama = ? AND KodeAkses = ?";
+        PreparedStatement ps = connect.preparedStatement(query);
 
+        try {
+            ps.setString(1, kodeNew);
+            ps.setString(2, namaOld);
+            ps.setString(3, kodeOld);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
+        ps.executeUpdate();
     }
+
+
 }

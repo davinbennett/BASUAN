@@ -57,8 +57,51 @@ public class Nasabah implements CustomerSQL{
     }
 
     @Override
-    public void updateCustomer(String nama, String alamat, Date dob) throws SQLException {
+    public void updateNama(String namaNew, String namaOld, String kode) throws SQLException {
+        String query = "UPDATE Nasabah AS N JOIN Akun AS A ON N.NasabahID = A.NasabahID " +
+                "SET Nama = ? " +
+                "WHERE N.Nama = ? AND A.KodeAkses = ?";
+        PreparedStatement ps = connect.preparedStatement(query);
+        try {
+            ps.setString(1, namaNew);
+            ps.setString(2, namaOld);
+            ps.setString(3, kode);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        ps.executeUpdate();
+    }
 
+    @Override
+    public void updateAlamat(String alamatNew, String namaOld, String kode) throws SQLException {
+        String query = "UPDATE Nasabah AS N JOIN Akun AS A ON N.NasabahID = A.NasabahID " +
+                "SET Alamat = ? " +
+                "WHERE Nama = ? AND KodeAkses = ?";
+        PreparedStatement ps = connect.preparedStatement(query);
+        try {
+            ps.setString(1, alamatNew);
+            ps.setString(2, namaOld);
+            ps.setString(3, kode);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        ps.executeUpdate();
+    }
+
+    @Override
+    public void updateDOB(Date dobNew, String namaOld, String kode) throws SQLException {
+        String query = "UPDATE Nasabah AS N JOIN Akun AS A ON N.NasabahID = A.NasabahID " +
+                "SET DOB = ? " +
+                "WHERE Nama = ? AND KodeAkses = ?";
+        PreparedStatement ps = connect.preparedStatement(query);
+        try {
+            ps.setDate(1, dobNew);
+            ps.setString(2, namaOld);
+            ps.setString(3, kode);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        ps.executeUpdate();
     }
 
 
