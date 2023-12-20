@@ -36,12 +36,12 @@ public class Akun implements AkunSQL{
     }
 
     @Override
-    public void insertAkun(String nasabahID, String rekening, String kodeAkses, String password) throws SQLException {
+    public void insertAkun(int nasabahID, String rekening, String kodeAkses, String password) throws SQLException {
         String query = "INSERT INTO Akun(NasabahID, Rekening, KodeAkses, Password) " +
                 "VALUES(?, ?, ?, ?)";
         PreparedStatement ps = connect.preparedStatement(query);
         try {
-            ps.setString(1, nasabahID);
+            ps.setInt(1, nasabahID);
             ps.setString(2, rekening);
             ps.setString(3, kodeAkses);
             ps.setString(4, password);

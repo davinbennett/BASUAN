@@ -173,11 +173,11 @@ public class Main {
         nasabah.insertCustomer(nama, alamat, sqlDate);
 
         // add nasabahID di tabel Akun
-        String nasabahID = "";
+        int nasabahID = 0;
         query = "SELECT NasabahID FROM nasabah";
         connect.rs = connect.execQuery(query);
         while (connect.rs.next()){
-            nasabahID = connect.rs.getString("NasabahID");
+            nasabahID = connect.rs.getInt("NasabahID");
         }
 
         akun.insertAkun(nasabahID, rekening, kodeAkses, password);
@@ -420,6 +420,7 @@ public class Main {
                         } while (choose < 1 || choose > 5);
                         switch (choose) {
                             case 1:
+                                PreparedStatement ps = null;
                                 cls();
                                 System.out.println("========================================================================================");
                                 System.out.println("|                                    D E P O S I T                                     |");
@@ -445,8 +446,17 @@ public class Main {
                                     password = sc.nextLine();
 
                                     // cek pw kalo udh ada
-                                    query = "SELECT Password FROM Akun";
-                                    connect.rs = connect.execQuery(query);
+                                    query = "SELECT Password FROM Akun AS A JOIN Nasabah AS N " +
+                                            "ON A.NasabahID = N.NasabahID " +
+                                            "WHERE Nama = ? AND KodeAkses = ?";
+                                    ps = connect.preparedStatement(query);
+                                    try {
+                                        ps.setString(1, nameRefresh);
+                                        ps.setString(2, kodeRefresh);
+                                    } catch (SQLException e) {
+                                        throw new RuntimeException(e);
+                                    }
+                                    connect.rs = ps.executeQuery();
                                     while (connect.rs.next()){
                                         passTemp = connect.rs.getString("Password");
                                         if(passTemp.equals(password)){
@@ -506,18 +516,23 @@ public class Main {
                                     password = sc.nextLine();
 
                                     // cek pw kalo udh ada
-                                    query = "SELECT Password FROM Akun";
-                                    connect.rs = connect.execQuery(query);
+                                    query = "SELECT Password FROM Akun AS A JOIN Nasabah AS N " +
+                                            "ON A.NasabahID = N.NasabahID " +
+                                            "WHERE Nama = ? AND KodeAkses = ?";
+                                    ps = connect.preparedStatement(query);
+                                    try {
+                                        ps.setString(1, nameRefresh);
+                                        ps.setString(2, kodeRefresh);
+                                    } catch (SQLException e) {
+                                        throw new RuntimeException(e);
+                                    }
+                                    connect.rs = ps.executeQuery();
                                     while (connect.rs.next()){
                                         passTemp = connect.rs.getString("Password");
                                         if(passTemp.equals(password)){
                                             cekPw = 0;
                                             break;
                                         }
-                                    }
-                                    if(cekPw == -1){
-                                        System.out.println("Password salah.");
-                                        continue;
                                     }
                                     if (jumlah < 10000){
                                         System.out.println("Minimal withdraw Rp 10.000,00");
@@ -555,18 +570,48 @@ public class Main {
                             case 3:
                                 cls();
                                 int cekRekAll = -1, cekRekSelf = -1,  akunIdTemp = 0;
-                                String rekTujuan = "", listRekTemp = "", namaRekTemp= "", rekAllTemp = "";
+                                String rekTujuan = "", listRekTemp = "", namaRekTemp= "", rekAllTemp = "", rekSelf = "";
                                 System.out.println("========================================================================================");
                                 System.out.println("|                          D A F T A R    R E K E N I N G                              |");
                                 System.out.println("========================================================================================");
                                 do {
+                                    rekSelf = "";
                                     akunIdTemp = 0;
+                                    cekRekAll = -1;
                                     listRekTemp = "";
                                     namaRekTemp = "";
                                     rekTujuan = "";
                                     cekRekSelf = -1;
+                                    query = "";
+                                    rekAllTemp = "";
+                                    ps = null;
+                                    cekPw = -1;
+
                                     System.out.print("\nMasukkan Rekening tujuan: ");
                                     rekTujuan = sc.nextLine();
+
+                                    // cek apakah rekTujuan = rekSELF
+                                    query = "SELECT Rekening FROM Akun AS A JOIN Nasabah AS N " +
+                                            "ON A.NasabahID = N.NasabahID " +
+                                            "WHERE Nama = ? AND KodeAkses = ?";
+                                    ps = connect.preparedStatement(query);
+                                    try {
+                                        ps.setString(1, nameRefresh);
+                                        ps.setString(2, kodeRefresh);
+                                    } catch (SQLException e) {
+                                        throw new RuntimeException(e);
+                                    }
+                                    connect.rs = ps.executeQuery();
+                                    while (connect.rs.next()) {
+                                        rekSelf = connect.rs.getString("Rekening");
+                                        if (rekSelf.equals(rekTujuan)) {
+                                            System.out.println("Tidak dapat menambahkan rekening sendiri.");
+                                            cekRekSelf = 0;
+                                            break;
+                                        }
+                                    }
+                                    if(cekRekSelf == 0)
+                                        continue;
 
                                     // cek all data akun customer, apa ada rekening yang dituju
                                     query = "SELECT Rekening FROM Akun";
@@ -579,6 +624,7 @@ public class Main {
                                         }
                                     }
 
+                                    // kalo rekening ga ketemu
                                     if (cekRekAll == -1){
                                         System.out.println("Rekening tidak ditemukan.");
 
@@ -587,7 +633,7 @@ public class Main {
                                             while (true){
                                                 try {
                                                     System.out.print("> ");
-                                                    pilihanBalik = sc.nextInt();
+                                                    pilihanBalik = sc.nextInt(); sc.nextLine();
                                                     break;
                                                 }catch (InputMismatchException e){
                                                     sc.nextLine();
@@ -600,28 +646,51 @@ public class Main {
                                         }
                                     }else{ //kalo ada rekeing yg dituju : dari rekTujuan
                                         // mulai cek daftar rekening di suatu akun (kalo rekening yg dituju ada yg sama, input rekening lagi & kasi notif) + sekaligus dapetin akunID punya pengguna now buat dimasukin ke DR
-                                        query = "SELECT AkunID " +
+                                        query = "SELECT listRek " +
                                                 "FROM DaftarRekening AS DR JOIN Akun AS A ON DR.AkunID = A.AkunID " +
                                                 "JOIN Nasabah AS N ON A.NasabahID = N.NasabahID " +
                                                 "WHERE Nama = ? AND KodeAkses = ?";
-                                        PreparedStatement ps = connect.preparedStatement(query);
+                                        ps = connect.preparedStatement(query);
                                         try {
                                             ps.setString(1, nameRefresh);
                                             ps.setString(2, kodeRefresh);
                                         } catch (SQLException e) {
                                             throw new RuntimeException(e);
                                         }
-                                        connect.rs = connect.execQuery(query);
+                                        connect.rs = ps.executeQuery();
                                         while (connect.rs.next()) {
-                                            akunIdTemp = connect.rs.getInt("AkunID");
+                                            listRekTemp = connect.rs.getString("ListRek");
                                             if (listRekTemp.equals(rekTujuan)) {
                                                 cekRekSelf = 0;
                                                 System.out.println("Rekening sudah terdaftar. Silahkan masukkan ulang.");
                                                 break;
                                             }
                                         }
+
+                                        // validasi pw dulu sebelum masukin rekening baru
+                                        System.out.print("Masukkan password: ");
+                                        password = sc.nextLine();
+
+                                        query = "SELECT Password FROM Akun AS A JOIN Nasabah AS N " +
+                                                "ON A.NasabahID = N.NasabahID " +
+                                                "WHERE Nama = ? AND KodeAkses = ?";
+                                        ps = connect.preparedStatement(query);
+                                        try {
+                                            ps.setString(1, nameRefresh);
+                                            ps.setString(2, kodeRefresh);
+                                        } catch (SQLException e) {
+                                            throw new RuntimeException(e);
+                                        }
+                                        connect.rs = ps.executeQuery();
+                                        while (connect.rs.next()){
+                                            passTemp = connect.rs.getString("Password");
+                                            if(passTemp.equals(password)){
+                                                cekPw = 0;
+                                                break;
+                                            }
+                                        }
                                     }
-                                }while (pilihanBalik == 2 || cekRekSelf == 0);
+                                }while (pilihanBalik == 2 || cekRekSelf == 0 || cekPw == 0);
 
                                 // kalo balik menu transaksi
                                 if(pilihanBalik == 1){
@@ -629,23 +698,42 @@ public class Main {
                                 }
 
                                 // kalo lanjut 1 -> (dapetin nilai namaRek dari akun rekTujuan) : NB: LIST REK GA PERLU DIMASUKIN SOALNYA NGAMBIL DARI REKTUJUAN
-                                query = "SELECT Nama" +
-                                        "FROM Nasabah AS N JOIN Akun A ON N.NasabahID = A.NasabahID" +
+                                query = "SELECT Nama " +
+                                        "FROM Nasabah AS N JOIN Akun A ON N.NasabahID = A.NasabahID " +
                                         "WHERE Rekening = ?";
-                                PreparedStatement ps = connect.preparedStatement(query);
+                                ps = connect.preparedStatement(query);
                                 try{
                                     ps.setString(1, rekTujuan);
                                 }catch (SQLException e) {
                                     throw new RuntimeException(e);
                                 }
-                                connect.rs = connect.execQuery(query);
+                                connect.rs = ps.executeQuery();
                                 while (connect.rs.next()){
                                     namaRekTemp = connect.rs.getString("Nama");
                                 }
+
+
                                 // lanjutan -> (rekening ketemu & ga ada yg sama -> tinggal input aja)
                                 DaftarRekening daftarRekening = new DaftarRekening();
-                                daftarRekening.insertDaftarRekening(akunIdTemp, namaRekTemp, rekTujuan); // AkunIdTemp : akun user skg yg dipake buat login ; namaRekTemp+rekTujuan : nama & rek dari rekening yg dituju
 
+                                // cari akunID user yg login buat dimasukin ke daftar rekening
+                                query = "SELECT AkunID " +
+                                        "FROM Akun AS A " +
+                                        "JOIN Nasabah AS N ON A.NasabahID = N.NasabahID " +
+                                        "WHERE Nama = ? AND KodeAkses = ?";
+                                ps = connect.preparedStatement(query);
+                                try {
+                                    ps.setString(1, nameRefresh);
+                                    ps.setString(2, kodeRefresh);
+                                } catch (SQLException e) {
+                                    throw new RuntimeException(e);
+                                }
+                                connect.rs = ps.executeQuery();
+                                while (connect.rs.next()) {
+                                    akunIdTemp = connect.rs.getInt("AkunID");
+                                }
+                                daftarRekening.insertDaftarRekening(akunIdTemp, namaRekTemp, rekTujuan); // AkunIdTemp : akun user skg yg dipake buat login ; namaRekTemp+rekTujuan : nama & rek dari rekening yg dituju
+                                System.out.printf("Rekening %s : %s berhasil ditambahkan\n\nKlik Enter untuk kembali ke Menu Transaksi.", rekTujuan, namaRekTemp);
                                 ulang = true;
                                 break;
 
