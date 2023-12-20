@@ -7,10 +7,8 @@ public class Akun implements AkunSQL{
     private Double saldo;
     private String kodeAkses;
 
-    public Akun(String rekening, Double saldo, String kodeAkses) {
-        this.rekening = rekening;
-        this.saldo = saldo;
-        this.kodeAkses = kodeAkses;
+    public Akun() {
+
     }
 
     public String getRekening() {
@@ -38,14 +36,15 @@ public class Akun implements AkunSQL{
     }
 
     @Override
-    public void insertAkun(String nasabahID, String rekening, String kodeAkses) throws SQLException {
-        String query = "INSERT INTO Akun(NasabahID, Rekening, KodeAkses) " +
-                "VALUES(?, ?, ?)";
+    public void insertAkun(String nasabahID, String rekening, String kodeAkses, String password) throws SQLException {
+        String query = "INSERT INTO Akun(NasabahID, Rekening, KodeAkses, Password) " +
+                "VALUES(?, ?, ?, ?)";
         PreparedStatement ps = connect.preparedStatement(query);
         try {
             ps.setString(1, nasabahID);
             ps.setString(2, rekening);
             ps.setString(3, kodeAkses);
+            ps.setString(4, password);
 
             ps.execute();
         } catch (SQLException e) {
@@ -54,7 +53,7 @@ public class Akun implements AkunSQL{
     }
 
     @Override
-    public void updateKode(String kodeNew, String kodeOld, String namaOld) throws SQLException {
+    public void updateKode(String kodeNew, String kodeRefresh, String namaRefresh) throws SQLException {
         String query = "UPDATE Nasabah AS N JOIN Akun AS A ON N.NasabahID = A.NasabahID " +
                 "SET KodeAkses = ? " +
                 "WHERE Nama = ? AND KodeAkses = ?";
@@ -62,8 +61,8 @@ public class Akun implements AkunSQL{
 
         try {
             ps.setString(1, kodeNew);
-            ps.setString(2, namaOld);
-            ps.setString(3, kodeOld);
+            ps.setString(2, namaRefresh);
+            ps.setString(3, kodeRefresh);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -71,5 +70,41 @@ public class Akun implements AkunSQL{
         ps.executeUpdate();
     }
 
+    @Override
+    public void updateSaldoIn(double jumlah, String kodeRefresh, String namaRefresh) throws SQLException {
+        String query = "UPDATE Akun AS a JOIN Transaksi AS t ON a.AkunID = t.AkunID " +
+                "JOIN Nasabah AS n ON a.NasabahID = n.NasabahID " +
+                "SET Saldo = Saldo + ? " +
+                "WHERE Nama = ? AND KodeAkses = ?";
+        PreparedStatement ps = connect.preparedStatement(query);
 
+        try {
+            ps.setDouble(1, jumlah);
+            ps.setString(2, namaRefresh);
+            ps.setString(3, kodeRefresh);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
+        ps.executeUpdate();
+    }
+
+    @Override
+    public void updateSaldoOut(double jumlah, String kodeRefresh, String namaRefresh) throws SQLException {
+        String query = "UPDATE Akun AS a JOIN Transaksi AS t ON a.AkunID = t.AkunID " +
+                "JOIN Nasabah AS N ON A.NasabahID = N.NasabahID " +
+                "SET Saldo = Saldo - ? " +
+                "WHERE Nama = ? AND KodeAkses = ?";
+        PreparedStatement ps = connect.preparedStatement(query);
+
+        try {
+            ps.setDouble(1, jumlah);
+            ps.setString(2, namaRefresh);
+            ps.setString(3, kodeRefresh);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
+        ps.executeUpdate();
+    }
 }

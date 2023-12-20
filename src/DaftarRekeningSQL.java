@@ -1,5 +1,5 @@
 import java.sql.SQLException;
 
 public interface DaftarRekeningSQL {
-    void insertDaftarRekening(String rekening) throws SQLException;
+    void insertDaftarRekening(int akunID, String namaRek, String listRek) throws SQLException;
 }

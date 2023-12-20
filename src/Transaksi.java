@@ -1,56 +1,49 @@
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Date;
+import java.sql.Timestamp;
 
 public class Transaksi implements TransaksiSQL{
-    private final Connect connect = Connect.getInstance();
+
+    private String namaRefresh;
     private String jenisTransaksi;
-    private Double jumlah;
-    private Date TanggalTransaksi;
+    private double jumlah;
+    private Timestamp TanggalTransaksi;
+    private double saldo;
+    private int akunID;
+    private String kodeRefresh;
+    private final Connect connect = Connect.getInstance();
 
-    public Transaksi(String jenisTransaksi, Double jumlah, Date tanggalTransaksi) {
-        this.jenisTransaksi = jenisTransaksi;
-        this.jumlah = jumlah;
-        TanggalTransaksi = tanggalTransaksi;
-    }
+    public Transaksi() {
 
-    public String getJenisTransaksi() {
-        return jenisTransaksi;
-    }
-
-    public void setJenisTransaksi(String jenisTransaksi) {
-        this.jenisTransaksi = jenisTransaksi;
-    }
-
-    public Double getJumlah() {
-        return jumlah;
-    }
-
-    public void setJumlah(Double jumlah) {
-        this.jumlah = jumlah;
-    }
-
-    public Date getTanggalTransaksi() {
-        return TanggalTransaksi;
-    }
-
-    public void setTanggalTransaksi(Date tanggalTransaksi) {
-        TanggalTransaksi = tanggalTransaksi;
     }
 
     @Override
-    public void insertTransaksi(String jenisTransaksi, Double jumlah, Date tanggalTransaksi) throws SQLException {
-        String query = "INSERT INTO Transaksi(JenisTransaksi, Jumlah, TanggalTransaksi) " +
-                "VALUES(?, ?, ?)";
+    public void insertTransaksi(int akunID, String jenisTransaksi, Timestamp tanggalTransaksi) throws SQLException {
+        String query = "INSERT INTO Transaksi(AkunID, JenisTransaksi, Jumlah, TanggalTransaksi) " +
+                "VALUES(?, ?, ?, ?)";
         PreparedStatement ps = connect.preparedStatement(query);
         try {
-            ps.setString(1, jenisTransaksi);
-            ps.setDouble(2, jumlah);
-            ps.setDate(3, tanggalTransaksi);
+            ps.setInt(1, akunID);
+            ps.setString(2, jenisTransaksi);
+            ps.setDouble(3, this.jumlah);
+            ps.setTimestamp(4, tanggalTransaksi);
 
             ps.execute();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
+
+    public Transaksi(String namaRefresh, String kodeRefresh, double jumlah) {
+        super();
+        this.namaRefresh = namaRefresh;
+        this.kodeRefresh = kodeRefresh;
+        this.jumlah = jumlah;
+    }
+
+    public void notif() {
+
+    }
+
 }
