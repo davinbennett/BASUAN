@@ -72,7 +72,7 @@ public class Akun implements AkunSQL{
 
     @Override
     public void updateSaldoIn(double jumlah, String kodeRefresh, String namaRefresh) throws SQLException {
-        String query = "UPDATE Akun AS a JOIN Transaksi AS t ON a.AkunID = t.AkunID " +
+        String query = "UPDATE Akun AS a " +
                 "JOIN Nasabah AS n ON a.NasabahID = n.NasabahID " +
                 "SET Saldo = Saldo + ? " +
                 "WHERE Nama = ? AND KodeAkses = ?";
@@ -91,7 +91,7 @@ public class Akun implements AkunSQL{
 
     @Override
     public void updateSaldoOut(double jumlah, String kodeRefresh, String namaRefresh) throws SQLException {
-        String query = "UPDATE Akun AS a JOIN Transaksi AS t ON a.AkunID = t.AkunID " +
+        String query = "UPDATE Akun AS a " +
                 "JOIN Nasabah AS N ON A.NasabahID = N.NasabahID " +
                 "SET Saldo = Saldo - ? " +
                 "WHERE Nama = ? AND KodeAkses = ?";
@@ -101,6 +101,23 @@ public class Akun implements AkunSQL{
             ps.setDouble(1, jumlah);
             ps.setString(2, namaRefresh);
             ps.setString(3, kodeRefresh);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
+        ps.executeUpdate();
+    }
+
+    @Override
+    public void updateSaldoInVersi2(double jumlah, String namaPenerima) throws SQLException {
+        String query = "UPDATE Akun AS A JOIN Nasabah AS N ON A.NasabahID = N.NasabahID " +
+                "SET Saldo = Saldo + ? " +
+                "WHERE Nama = ?";
+        PreparedStatement ps = connect.preparedStatement(query);
+
+        try {
+            ps.setDouble(1, jumlah);
+            ps.setString(2, namaPenerima);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }

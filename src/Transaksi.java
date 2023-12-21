@@ -1,7 +1,8 @@
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.sql.Date;
 import java.sql.Timestamp;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 
 public class Transaksi implements TransaksiSQL{
 
@@ -14,8 +15,12 @@ public class Transaksi implements TransaksiSQL{
     private String kodeRefresh;
     private final Connect connect = Connect.getInstance();
 
-    public Transaksi() {
-
+    public Timestamp now() throws ParseException {
+        Timestamp now = new Timestamp(System.currentTimeMillis());
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        String timeStampFormat = formatter.format(now);
+        java.util.Date parsedDate = formatter.parse(timeStampFormat);
+        return new Timestamp(parsedDate.getTime());
     }
 
     @Override
@@ -42,7 +47,7 @@ public class Transaksi implements TransaksiSQL{
         this.jumlah = jumlah;
     }
 
-    public void notif() {
+    public void notif() throws ParseException {
 
     }
 

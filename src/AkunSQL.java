@@ -6,5 +6,5 @@ public interface AkunSQL {
     void updateSaldoIn(double jumlah, String kodeRefresh, String namaRefresh) throws SQLException;
     void updateSaldoOut(double jumlah, String kodeRefresh, String namaRefresh) throws SQLException;
 
-
+    void updateSaldoInVersi2(double jumlah, String namaPenerima) throws SQLException;
 }

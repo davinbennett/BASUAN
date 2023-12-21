@@ -13,6 +13,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.InputMismatchException;
 import java.util.Locale;
 import java.util.Scanner;
+import java.util.stream.Stream;
 
 
 public class Main {
@@ -66,7 +67,7 @@ public class Main {
                 kodeAkses = "";
                 System.out.print("Masukkan Kode Akses [6 digit alphanumerik, tanpa spasi, huruf kecil semua, dan harus mengandung angka]: ");
                 kodeAkses = sc.nextLine();
-            } while (!(kodeAkses.matches("^[a-z0-9]{6}$") && kodeAkses.matches(".*\\d.*")));
+            } while (kodeAkses.length() != 6 || !kodeAkses.equals(kodeAkses.toLowerCase()) || !kodeAkses.matches(".*\\d.*") || !kodeAkses.matches("[a-z0-9]+") || !kodeAkses.matches(".*[a-z].*"));
             System.out.print("Masukkan kembali Kode Akses: ");
             verifyKode = sc.nextLine();
         }while (!verifyKode.equals(kodeAkses));
@@ -202,7 +203,7 @@ public class Main {
             choice = 0;
             cls();
             System.out.println("========================================================================================");
-            System.out.println("|                                     Hi " + nameRefresh + ",                               |");
+            System.out.println("                                     Hi " + nameRefresh + ",                               ");
             System.out.println("|                           Selamat Datang di Basuan M-Banking                          |");
             System.out.println("========================================================================================");
             System.out.println("\n1. Cek Profile\n2. Transaksi\n3. Keluar");
@@ -230,7 +231,7 @@ public class Main {
                         int choose = 0;
                         formatSaldo = "";
                         System.out.println("========================================================================================");
-                        System.out.println("|                                     P R O F I L E                                     |");
+                        System.out.println("|                                     P R O F I L E                                    |");
                         System.out.println("========================================================================================");
                         String query = "SELECT Nama, Alamat, DOB, Rekening, KodeAkses, Saldo " +
                                 "FROM nasabah n JOIN akun a ON n.NasabahID = a.NasabahID";
@@ -243,7 +244,7 @@ public class Main {
                             rekeningTemp = connect.rs.getString("Rekening");
                             kodeAksesTemp = connect.rs.getString("KodeAkses");
                             saldoTemp = connect.rs.getDouble("Saldo");
-                            if(namaTemp.equals(namaOld) && kodeAksesTemp.equals(kodeOld))
+                            if(namaTemp.equals(nameRefresh) && kodeAksesTemp.equals(kodeRefresh))
                                 break;
                         }
                         formatSaldo = formatSaldo(saldoTemp);
@@ -286,11 +287,13 @@ public class Main {
                                     String namaNew;
                                     do {
                                         namaNew = "";
-                                        System.out.print("Masukkan Username baru [minimal 8 karakter alphabeth, huruf kecil semua, tanpa spasi, dan tanpa angka]: ");
+                                        System.out.print("\nMasukkan Username baru [minimal 8 karakter alphabeth, huruf kecil semua, tanpa spasi, dan tanpa angka]: ");
                                         namaNew = sc.nextLine();
                                     }while (namaNew.length() < 8 || !namaNew.matches("[a-zA-Z]+") || namaNew.matches(".*\\d.*") || namaNew.matches(".*[A-Z].*"));
 
                                     // insert ke db
+                                    DaftarRekening dr = new DaftarRekening();
+                                    dr.updateDaftarRekening(namaNew, nameRefresh, kodeRefresh);
                                     nasabah.updateNama(namaNew, nameRefresh, kodeRefresh);
                                     nameRefresh = namaNew;
                                     System.out.println("\nUsername berhasil diupdate. Klik Enter untuk kembali ke Profile");
@@ -300,7 +303,7 @@ public class Main {
                                     String kodeNew;
                                     do {
                                         kodeNew = "";
-                                        System.out.print("Masukkan Kode Akses [terdiri dari 6 digit alphanumerik, tanpa spasi, huruf kecil semua, dan harus mengandung angka]: ");
+                                        System.out.print("\nMasukkan Kode Akses [terdiri dari 6 digit alphanumerik, tanpa spasi, huruf kecil semua, dan harus mengandung angka]: ");
                                         kodeNew = sc.nextLine();
                                     } while (!(kodeNew.matches("^[a-z0-9]{6}$") && kodeNew.matches(".*\\d.*")));
 
@@ -328,7 +331,7 @@ public class Main {
                                     java.util.Date tanggalLahir = null;
                                     Period selisih = null;
                                     while (!formatBenar) {
-                                        System.out.print("Masukkan tanggal lahir [yyyy-mm-dd]: ");
+                                        System.out.print("\nMasukkan tanggal lahir [yyyy-mm-dd]: ");
                                         String inputTanggal = sc.next();
 
                                         try {
@@ -360,7 +363,7 @@ public class Main {
                                     if (selisih.getYears() >= 17){
                                         nasabah.updateDOB(dobNew, nameRefresh, kodeRefresh);
                                         System.out.println("\nUsername berhasil diupdate. Klik Enter untuk kembali ke Profile");
-                                        sc.nextLine();
+                                        sc.nextLine(); sc.nextLine();
                                     }
                                     break;
                                 case 5:
@@ -374,31 +377,30 @@ public class Main {
                     
                 case 2:
                     cls();
-                    int choose = 0, akunId = 0, cekPw = -1;
-                    String query = "", password = "";
-                    double jumlah = 0.0;
-                    boolean ulang = false;
-                    Timestamp now;
-                    SimpleDateFormat formatter;
-                    String timeStampFormat;
+                    int choose;
+                    double jumlah;
+                    boolean ulang;
 
                     do {
-                        cekPw = -1;
-                        password = "";
-                        query = "";
+                        ulang = false;
+                        int cekPw = -1, cekRekAll = -1, cekRekSelf = -1,  akunIdTemp = 0, cekNamaRek = 0;
+                        String password = "", query = "", namaRekTujuan = "", namaRekQry = "", rekTujuan = "", listRekTemp = "", namaRekTemp= "", rekAllTemp = "", rekSelf = "";
                         jumlah = 0.0;
-                        now = null;
-                        akunId = 0;
+                        Timestamp now = null;
+                        int akunId = 0;
                         choose = 0;
-                        formatter = null;
-                        timeStampFormat = null;
+                        SimpleDateFormat formatter = null;
+                        String timeStampFormat = null;
                         Timestamp timestamp = null;
                         java.util.Date parsedDate = null;
                         formatSaldo = "";
-
-                        Akun akun = new Akun();
+                        PreparedStatement ps = null;
                         Boolean validateKode = false;
                         String passTemp = "";
+                        double saldoSelf = 0.0;
+
+                        Akun akun = new Akun();
+
                         int pilihanBalik = 0;
                         cls();
                         System.out.println("========================================================================================");
@@ -420,7 +422,7 @@ public class Main {
                         } while (choose < 1 || choose > 5);
                         switch (choose) {
                             case 1:
-                                PreparedStatement ps = null;
+                                ps = null;
                                 cls();
                                 System.out.println("========================================================================================");
                                 System.out.println("|                                    D E P O S I T                                     |");
@@ -497,10 +499,12 @@ public class Main {
                                 break;
                             case 2:
                                 cls();
+                                int cekBalikKeTransfer = -1;
                                 System.out.println("========================================================================================");
                                 System.out.println("|                                    W I T H D R A W                                   |");
                                 System.out.println("========================================================================================");
                                 do {
+                                    cekPw = -1;
                                     while (true) {
                                         try{
                                             System.out.print("\nMasukkan jumlah withdraw: ");
@@ -538,7 +542,55 @@ public class Main {
                                         System.out.println("Minimal withdraw Rp 10.000,00");
                                         continue;
                                     }
-                                }while (jumlah < 10000 || cekPw == -1);
+
+
+                                    // cek apakah yg di tf tu cukup dari saldonya
+                                    query = "";
+                                    saldoSelf = 0.0;
+                                    query = "SELECT Saldo " +
+                                            "FROM Akun AS A JOIN Nasabah AS N " +
+                                            "ON A.NasabahID = N.NasabahID " +
+                                            "WHERE Nama = ? AND KodeAkses = ?";
+                                    ps = connect.preparedStatement(query);
+                                    try {
+                                        ps.setString(1, nameRefresh);
+                                        ps.setString(2, kodeRefresh);
+                                    } catch (SQLException e) {
+                                        throw new RuntimeException(e);
+                                    }
+                                    connect.rs = ps.executeQuery();
+                                    while (connect.rs.next()) {
+                                        saldoSelf = connect.rs.getDouble("Saldo");
+                                    }
+                                    if (jumlah > saldoSelf) {
+                                        System.out.println("\nSaldo tidak cukup.");
+                                        System.out.println("\nKembali ke Menu Transaksi ?\n1. Ya\n2. Tidak");
+                                        do {
+                                            while (true) {
+                                                try {
+                                                    System.out.print("> ");
+                                                    pilihanBalik = sc.nextInt();
+                                                    sc.nextLine();
+                                                    break;
+                                                } catch (InputMismatchException e) {
+                                                    sc.nextLine();
+                                                    continue;
+                                                }
+                                            }
+                                        } while (pilihanBalik < 1 || pilihanBalik > 2);
+                                    }
+
+                                    cekBalikKeTransfer = -1;
+
+                                    if (pilihanBalik == 1) {
+                                        break;
+                                    } else if (pilihanBalik == 2)
+                                        cekBalikKeTransfer = 0;
+                                }while (jumlah < 10000 || cekPw == -1 || cekBalikKeTransfer == 0);
+                                if(pilihanBalik == 1){
+                                    ulang = true;
+                                    break;
+                                }
 
                                 // search AKUNID buat DI TRANSAKSI
                                 query = "SELECT AkunID FROM Akun";
@@ -569,14 +621,12 @@ public class Main {
 
                             case 3:
                                 cls();
-                                int cekRekAll = -1, cekRekSelf = -1,  akunIdTemp = 0;
-                                String rekTujuan = "", listRekTemp = "", namaRekTemp= "", rekAllTemp = "", rekSelf = "";
+
                                 System.out.println("========================================================================================");
                                 System.out.println("|                          D A F T A R    R E K E N I N G                              |");
                                 System.out.println("========================================================================================");
                                 do {
                                     rekSelf = "";
-                                    akunIdTemp = 0;
                                     cekRekAll = -1;
                                     listRekTemp = "";
                                     namaRekTemp = "";
@@ -586,6 +636,7 @@ public class Main {
                                     rekAllTemp = "";
                                     ps = null;
                                     cekPw = -1;
+                                    rekAllTemp = "";
 
                                     System.out.print("\nMasukkan Rekening tujuan: ");
                                     rekTujuan = sc.nextLine();
@@ -643,6 +694,7 @@ public class Main {
                                         }while (pilihanBalik < 1 || pilihanBalik > 2);
                                         if(pilihanBalik == 1){
                                             ulang = true;
+                                            break;
                                         }
                                     }else{ //kalo ada rekeing yg dituju : dari rekTujuan
                                         // mulai cek daftar rekening di suatu akun (kalo rekening yg dituju ada yg sama, input rekening lagi & kasi notif) + sekaligus dapetin akunID punya pengguna now buat dimasukin ke DR
@@ -666,31 +718,42 @@ public class Main {
                                                 break;
                                             }
                                         }
+                                        if(cekRekSelf == 0)
+                                            continue;
+
 
                                         // validasi pw dulu sebelum masukin rekening baru
-                                        System.out.print("Masukkan password: ");
-                                        password = sc.nextLine();
+                                        do {
+                                            System.out.print("Masukkan password: ");
+                                            password = sc.nextLine();
 
-                                        query = "SELECT Password FROM Akun AS A JOIN Nasabah AS N " +
-                                                "ON A.NasabahID = N.NasabahID " +
-                                                "WHERE Nama = ? AND KodeAkses = ?";
-                                        ps = connect.preparedStatement(query);
-                                        try {
-                                            ps.setString(1, nameRefresh);
-                                            ps.setString(2, kodeRefresh);
-                                        } catch (SQLException e) {
-                                            throw new RuntimeException(e);
-                                        }
-                                        connect.rs = ps.executeQuery();
-                                        while (connect.rs.next()){
-                                            passTemp = connect.rs.getString("Password");
-                                            if(passTemp.equals(password)){
-                                                cekPw = 0;
-                                                break;
+                                            query = "SELECT Password FROM Akun AS A JOIN Nasabah AS N " +
+                                                    "ON A.NasabahID = N.NasabahID " +
+                                                    "WHERE Nama = ? AND KodeAkses = ?";
+                                            ps = connect.preparedStatement(query);
+                                            try {
+                                                ps.setString(1, nameRefresh);
+                                                ps.setString(2, kodeRefresh);
+                                            } catch (SQLException e) {
+                                                throw new RuntimeException(e);
                                             }
-                                        }
+                                            connect.rs = ps.executeQuery();
+                                            while (connect.rs.next()) {
+                                                passTemp = connect.rs.getString("Password");
+                                                if (passTemp.equals(password)) {
+                                                    cekPw = 0;
+                                                    break;
+                                                }
+                                            }
+                                            if (cekPw == -1) {
+                                                System.out.println("Password salah. Silahkan masukkan ulang\n");
+                                            }
+                                        }while (cekPw == -1);
                                     }
-                                }while (pilihanBalik == 2 || cekRekSelf == 0 || cekPw == 0);
+                                    if(cekPw == 0) {
+                                        break;
+                                    }
+                                }while (pilihanBalik == 2 || cekRekSelf == 0);
 
                                 // kalo balik menu transaksi
                                 if(pilihanBalik == 1){
@@ -733,16 +796,188 @@ public class Main {
                                     akunIdTemp = connect.rs.getInt("AkunID");
                                 }
                                 daftarRekening.insertDaftarRekening(akunIdTemp, namaRekTemp, rekTujuan); // AkunIdTemp : akun user skg yg dipake buat login ; namaRekTemp+rekTujuan : nama & rek dari rekening yg dituju
-                                System.out.printf("Rekening %s : %s berhasil ditambahkan\n\nKlik Enter untuk kembali ke Menu Transaksi.", rekTujuan, namaRekTemp);
+                                System.out.printf("Rekening berhasil ditambahkan.\nNo. Rek: %s\nNama: %s\n\nKlik Enter untuk kembali ke Menu Transaksi.\n", rekTujuan, namaRekTemp); sc.nextLine();
                                 ulang = true;
                                 break;
 
                             case 4:
                                 cls();
+                                cekBalikKeTransfer = -1;
+
                                 System.out.println("========================================================================================");
                                 System.out.println("|                    T R A N S F E R   A N T A R   R E K E N I N G                     |");
                                 System.out.println("========================================================================================");
-                                //System.out.println("");
+                                do {
+                                    do {
+                                        cekBalikKeTransfer = -1;
+                                        namaRekTujuan = "";
+                                        cekNamaRek = -1;
+                                        cekRekSelf = -1;
+                                        pilihanBalik = -1;
+
+                                        System.out.print("\nMasukkan Nama Rekening: ");
+                                        namaRekTujuan = sc.nextLine();
+
+                                        // cek apakah rekTujuan = rekSELF
+                                        query = "";
+                                        query = "SELECT Rekening FROM Akun AS A JOIN Nasabah AS N " +
+                                                "ON A.NasabahID = N.NasabahID " +
+                                                "WHERE Nama = ? AND KodeAkses = ?";
+                                        ps = connect.preparedStatement(query);
+                                        try {
+                                            ps.setString(1, nameRefresh);
+                                            ps.setString(2, kodeRefresh);
+                                        } catch (SQLException e) {
+                                            throw new RuntimeException(e);
+                                        }
+                                        connect.rs = ps.executeQuery();
+                                        while (connect.rs.next()) {
+                                            rekSelf = connect.rs.getString("Rekening");
+                                            if (rekSelf.equals(rekTujuan)) {
+                                                System.out.println("Tidak dapat menambahkan rekening sendiri.");
+                                                cekRekSelf = 0;
+                                                break;
+                                            }
+                                        }
+                                        if (cekRekSelf == 0)
+                                            continue;
+
+                                        // search : apa ada rekening yg dituju
+                                        query = "SELECT NamaRek " +
+                                                "FROM DaftarRekening" +
+                                                "WHERE AkunID IN ( " +
+                                                "   SELECT AkunID " +
+                                                "   FROM Akun AS A JOIN Nasabah AS N ON A.NasabahID = N.NasabahID " +
+                                                "   WHERE Nama = ? AND KodeAkses = ? " +
+                                                ")";
+                                        ps = connect.preparedStatement(query);
+                                        try {
+                                            ps.setString(1, nameRefresh);
+                                            ps.setString(2, kodeRefresh);
+                                        } catch (SQLException e) {
+                                            throw new RuntimeException(e);
+                                        }
+                                        connect.rs = ps.executeQuery();
+                                        while (connect.rs.next()) {
+                                            namaRekQry = connect.rs.getString("NamaRek");
+                                            if (namaRekQry.equalsIgnoreCase(namaRekTujuan)) {
+                                                cekNamaRek = 0;
+                                                break;
+                                            }
+                                        }
+
+                                        // kalo rekening ga ketemu
+                                        if (cekNamaRek == -1) {
+                                            System.out.println("Nama Rekening tidak ditemukan.");
+
+                                            System.out.println("\nKembali ke Menu Transaksi ?\n1. Ya\n2. Tidak");
+                                            do {
+                                                while (true) {
+                                                    try {
+                                                        System.out.print("> ");
+                                                        pilihanBalik = sc.nextInt();
+                                                        sc.nextLine();
+                                                        break;
+                                                    } catch (InputMismatchException e) {
+                                                        sc.nextLine();
+                                                        continue;
+                                                    }
+                                                }
+                                            } while (pilihanBalik < 1 || pilihanBalik > 2);
+                                        }
+                                    } while (pilihanBalik == 2 || cekRekSelf == 0);
+
+                                    // kalo balek ke menu transaksi
+                                    if (pilihanBalik == 1) {
+                                        ulang = true;
+                                        break;
+                                    }
+
+                                    // kalo ketemu
+                                    while (true) {
+                                        try {
+                                            System.out.print("Masukkan jumlah transfer: ");
+                                            jumlah = sc.nextDouble();
+                                            sc.nextLine();
+                                            break;
+                                        } catch (InputMismatchException e) {
+                                            sc.nextLine();
+                                            continue;
+                                        }
+                                    }
+
+                                    // cek apakah yg di tf tu cukup dari saldonya
+                                    query = "";
+                                    saldoSelf = 0.0;
+                                    query = "SELECT Saldo " +
+                                            "FROM Akun AS A JOIN Nasabah AS N " +
+                                            "ON A.NasabahID = N.NasabahID " +
+                                            "WHERE Nama = ? AND KodeAkses = ?";
+                                    ps = connect.preparedStatement(query);
+                                    try {
+                                        ps.setString(1, nameRefresh);
+                                        ps.setString(2, kodeRefresh);
+                                    } catch (SQLException e) {
+                                        throw new RuntimeException(e);
+                                    }
+                                    connect.rs = ps.executeQuery();
+                                    while (connect.rs.next()) {
+                                        saldoSelf = connect.rs.getDouble("Saldo");
+                                    }
+                                    if (jumlah > saldoSelf) {
+                                        System.out.println("\nSaldo tidak cukup.");
+                                        System.out.println("\nKembali ke Menu Transaksi ?\n1. Ya\n2. Tidak");
+                                        do {
+                                            while (true) {
+                                                try {
+                                                    System.out.print("> ");
+                                                    pilihanBalik = sc.nextInt();
+                                                    sc.nextLine();
+                                                    break;
+                                                } catch (InputMismatchException e) {
+                                                    sc.nextLine();
+                                                    continue;
+                                                }
+                                            }
+                                        } while (pilihanBalik < 1 || pilihanBalik > 2);
+                                    }
+                                    if (pilihanBalik == 1) {
+                                        break;
+                                    } else if (pilihanBalik == 2)
+                                        cekBalikKeTransfer = 0;
+
+                                }while (cekBalikKeTransfer == 0);
+                                if(pilihanBalik == 1){
+                                    ulang = true;
+                                    break;
+                                }
+
+                                // kalo saldo cukup , input ke database
+                                // saldoku ngurang, trus saldo yg di akun penerima jd nambah
+
+                                // ngurangi di saldoku
+                                akun.updateSaldoOut(jumlah, kodeRefresh, nameRefresh);
+
+                                // nambah saldo di penerima
+                                akun.updateSaldoInVersi2(jumlah, namaRekTujuan);
+
+                                Deposit depo = new Deposit(nameRefresh, kodeRefresh, jumlah);
+                                now = new Timestamp(System.currentTimeMillis());
+                                formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                                timeStampFormat = formatter.format(now);
+                                parsedDate = formatter.parse(timeStampFormat);
+                                timestamp = new Timestamp(parsedDate.getTime());
+
+                                query = "SELECT AkunID FROM Akun";
+                                connect.rs = connect.execQuery(query);
+                                while (connect.rs.next()){
+                                    akunId = connect.rs.getInt("AkunID");
+                                }
+                                depo.insertTransaksi(akunId, "Transfer", timestamp);
+
+
+                                Transfer tf = new Transfer(nameRefresh,kodeRefresh,jumlah);
+                                tf.notif(); sc.nextLine();
 
                                 ulang = true;
                                 break;
@@ -753,7 +988,6 @@ public class Main {
                         }
                     }while (ulang);
                     break;
-
                 case 3:
                     return;
             }
@@ -769,6 +1003,8 @@ public class Main {
         System.out.println("|                                      L O G I N                                        |");
         System.out.println("========================================================================================");
         do {
+            kode = "";
+            name = "";
             flag = -1;
             System.out.print("\nMasukkan Username: ");
             name = sc.nextLine();
@@ -786,41 +1022,45 @@ public class Main {
                 kodeTemp = connect.rs.getString("KodeAkses");
                 String alamatTemp = connect.rs.getString("Alamat");
                 Date date = connect.rs.getDate("DOB");
-                if(nameTemp.equals(name) && kodeTemp.equals(kode)){
-                    flag = 1;
+                if(nameTemp.equals(name)){
+                    flag = 0;
                     break;
                 }
             }
+            if(flag == 0){
+                if(kodeTemp.equals(kode)){
 
-            if(flag == -1){
-                if(nameTemp.equals(name) && !kodeTemp.equals(kode))
-                    System.out.printf("Kode Akses salah. Kesempatan (%d / 3).\n\n", count);
-                else{
-                    int pilihan = 0;
-                    System.out.println("Username tidak ditemukan.\n");
-                    System.out.println("Lanjutkan login ?\n1. Lanjut\n2. Tidak");
-                    do{
-                        while (true){
-                            try{
-                                System.out.print("> ");
-                                pilihan = sc.nextInt(); sc.nextLine();
-                                break;
-                            }catch (InputMismatchException e){
-                                sc.nextLine();
-                                continue;
-                            }
-                        }
-                    }while(pilihan < 1 || pilihan > 2);
-                    if(pilihan == 2)
+                }else{
+                    if(count >= 3){
+                        System.out.println("Kode Akses salah. Klik Enter untuk kembali ke menu utama."); sc.nextLine();
                         return;
-                    continue;
-                }
-                count++;
-                if(count > 3){
-                    System.out.println("Lupa kata sandi?");
-                    return;
-                }
+                    }
+                    System.out.printf("Kode Akses salah. Kesempatan (%d / 3).\n\n", count);
 
+                    flag = -1;
+                    count++;
+
+                }
+            }
+            else {
+                int pilihan = 0;
+                System.out.println("Username tidak ditemukan.\n");
+                System.out.println("Lanjutkan login ?\n1. Lanjut\n2. Tidak");
+                do{
+                    while (true){
+                        try{
+                            System.out.print("> ");
+                            pilihan = sc.nextInt(); sc.nextLine();
+                            break;
+                        }catch (InputMismatchException e){
+                            sc.nextLine();
+                            continue;
+                        }
+                    }
+                }while(pilihan < 1 || pilihan > 2);
+                if(pilihan == 2)
+                    return;
+                continue;
             }
         }while(flag == -1);
 
@@ -867,7 +1107,7 @@ public class Main {
                     break;
                 case 3:
                     cls();
-                    System.out.println("Terimakasih telah menggunakan Basuan Mobile");
+                    System.out.println("Terimakasih telah menggunakan Basuan M-Banking");
                     System.exit(0);
             }
         }
