@@ -499,12 +499,14 @@ public class Main {
                                 break;
                             case 2:
                                 cls();
-                                int cekBalikKeTransfer = -1;
+                                int cekBalikKeTransfer;
                                 System.out.println("========================================================================================");
                                 System.out.println("|                                    W I T H D R A W                                   |");
                                 System.out.println("========================================================================================");
                                 do {
+                                    cekBalikKeTransfer = -1;
                                     cekPw = -1;
+                                    pilihanBalik = -1;
                                     while (true) {
                                         try{
                                             System.out.print("\nMasukkan jumlah withdraw: ");
@@ -538,8 +540,16 @@ public class Main {
                                             break;
                                         }
                                     }
+                                    if(cekPw == -1 && jumlah < 10000){
+                                        System.out.println("Minimal withdraw Rp 10.000,00 dan Password salah.");
+                                        continue;
+                                    }
                                     if (jumlah < 10000){
                                         System.out.println("Minimal withdraw Rp 10.000,00");
+                                        continue;
+                                    }
+                                    if(cekPw == -1){
+                                        System.out.println("Password salah.");
                                         continue;
                                     }
 
@@ -579,8 +589,6 @@ public class Main {
                                             }
                                         } while (pilihanBalik < 1 || pilihanBalik > 2);
                                     }
-
-                                    cekBalikKeTransfer = -1;
 
                                     if (pilihanBalik == 1) {
                                         break;
@@ -844,7 +852,7 @@ public class Main {
 
                                         // search : apa ada rekening yg dituju
                                         query = "SELECT NamaRek " +
-                                                "FROM DaftarRekening" +
+                                                "FROM DaftarRekening " +
                                                 "WHERE AkunID IN ( " +
                                                 "   SELECT AkunID " +
                                                 "   FROM Akun AS A JOIN Nasabah AS N ON A.NasabahID = N.NasabahID " +
@@ -1000,7 +1008,7 @@ public class Main {
         int flag, count = 1;
         String nameTemp = "", kodeTemp = "";
         System.out.println("========================================================================================");
-        System.out.println("|                                      L O G I N                                        |");
+        System.out.println("|                                      L O G I N                                       |");
         System.out.println("========================================================================================");
         do {
             kode = "";
@@ -1079,7 +1087,7 @@ public class Main {
             cls();
             choice = 0;
             System.out.println("========================================================================================");
-            System.out.println("|                                 M A I N   M E N U                                     |");
+            System.out.println("|                                 M A I N   M E N U                                    |");
             System.out.println("========================================================================================");
 
             System.out.println("1. Login\n2. Register\n3. Exit");
