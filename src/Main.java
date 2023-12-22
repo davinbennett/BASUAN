@@ -13,7 +13,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.InputMismatchException;
 import java.util.Locale;
 import java.util.Scanner;
-import java.util.stream.Stream;
 
 
 public class Main {
@@ -206,7 +205,7 @@ public class Main {
             System.out.println("                                     Hi " + nameRefresh + ",                               ");
             System.out.println("|                           Selamat Datang di Basuan M-Banking                          |");
             System.out.println("========================================================================================");
-            System.out.println("\n1. Cek Profile\n2. Transaksi\n3. Keluar");
+            System.out.println("\n1. Cek Profile\n2. Transaksi\n3. Daftar Rekening\n4. Keluar\n");
             do{
                 while (true){
                     try {
@@ -218,7 +217,7 @@ public class Main {
                         continue;
                     }
                 }
-            }while (choice < 1 || choice > 3);
+            }while (choice < 1 || choice > 4);
 
             switch (choice) {
                 case 1:
@@ -305,7 +304,7 @@ public class Main {
                                         kodeNew = "";
                                         System.out.print("\nMasukkan Kode Akses [terdiri dari 6 digit alphanumerik, tanpa spasi, huruf kecil semua, dan harus mengandung angka]: ");
                                         kodeNew = sc.nextLine();
-                                    } while (!(kodeNew.matches("^[a-z0-9]{6}$") && kodeNew.matches(".*\\d.*")));
+                                    } while (kodeNew.length() != 6 || !kodeNew.equals(kodeNew.toLowerCase()) || !kodeNew.matches(".*\\d.*") || !kodeNew.matches("[a-z0-9]+") || !kodeNew.matches(".*[a-z].*"));
 
                                     // insert ke db
                                     akun.updateKode(kodeNew, kodeRefresh, nameRefresh);
@@ -406,7 +405,7 @@ public class Main {
                         System.out.println("========================================================================================");
                         System.out.println("|                                  T R A N S A K S I                                   |");
                         System.out.println("========================================================================================");
-                        System.out.println("\n1. Deposit\n2. Withdraw\n3. Daftar rekening\n4. Transfer antar rekening\n5. Kembali ke Menu");
+                        System.out.println("\n1. Deposit\n2. Withdraw\n3. Tambah rekening\n4. Transfer antar rekening\n5. Kembali ke Menu");
                         do {
                             while (true) {
                                 try{
@@ -631,7 +630,7 @@ public class Main {
                                 cls();
 
                                 System.out.println("========================================================================================");
-                                System.out.println("|                          D A F T A R    R E K E N I N G                              |");
+                                System.out.println("|                          T A M B A H    R E K E N I N G                              |");
                                 System.out.println("========================================================================================");
                                 do {
                                     rekSelf = "";
@@ -997,8 +996,43 @@ public class Main {
                     }while (ulang);
                     break;
                 case 3:
+                    cls();
+                    viewAllDaftarRekening(nameRefresh, kodeRefresh);
+                    break;
+                case 4:
                     return;
             }
+        }
+    }
+
+    public void viewAllDaftarRekening(String nameRefresh, String kodeRefresh) throws SQLException {
+        int i = 1;
+        System.out.println("========================================================================================");
+        System.out.println("|                          D A F T A R    R E K E N I N G                              |");
+        System.out.println("========================================================================================");
+        String query = "SELECT NamaRek, ListRek " +
+                "FROM DaftarRekening " +
+                "WHERE AkunID IN ( " +
+                "   SELECT AkunID " +
+                "   FROM Akun AS A JOIN Nasabah AS N ON A.NasabahID = N.NasabahID " +
+                "   WHERE Nama = ? AND KodeAkses = ? " +
+                ")";
+
+        PreparedStatement ps = connect.preparedStatement(query);
+        try {
+            ps.setString(1, nameRefresh);
+            ps.setString(2, kodeRefresh);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        connect.rs = ps.executeQuery();
+        while (connect.rs.next()) {
+            String namaRekTemp = connect.rs.getString("NamaRek");
+            String listRekTemp = connect.rs.getString("ListRek");
+            System.out.printf(" %d. Nama: %s\n", i, namaRekTemp);
+            System.out.printf("    Rekening: %s\n", listRekTemp);
+            System.out.println("----------------------------------------------------------------------------------------");
+            i++;
         }
     }
 
