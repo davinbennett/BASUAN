@@ -1,0 +1,41 @@
+use basuan;
+
+CREATE TABLE Nasabah (
+	NasabahID INT PRIMARY KEY AUTO_INCREMENT,
+    Nama VARCHAR(50) NOT NULL,
+	Alamat VARCHAR(100),
+    DOB date
+);
+
+CREATE TABLE Akun (
+    AkunID INT PRIMARY KEY AUTO_INCREMENT,
+    NasabahID INT,
+    Rekening VARCHAR(10) NOT NULL UNIQUE,
+    Saldo DECIMAL(30, 2) DEFAULT 0.00,
+    KodeAkses VARCHAR(6) NOT NULL,
+    Password VARCHAR(6) NOT NULL,
+    FOREIGN KEY (NasabahID) REFERENCES Nasabah(NasabahID)
+		ON DELETE CASCADE
+		ON UPDATE CASCADE
+);
+
+CREATE TABLE Transaksi (
+    TransaksiID INT PRIMARY KEY AUTO_INCREMENT,
+    AkunID INT,
+    JenisTransaksi VARCHAR(20) NOT NULL,
+    Jumlah DECIMAL(30, 2),
+    TanggalTransaksi TIMESTAMP,
+    FOREIGN KEY (AkunID) REFERENCES Akun(AkunID)
+		ON DELETE CASCADE
+        ON UPDATE CASCADE
+);
+
+CREATE TABLE DaftarRekening(
+	ListRekID INT AUTO_INCREMENT PRIMARY KEY,
+    AkunID INT,
+    NamaRek varchar(50),
+    ListRek VARCHAR(10),
+    FOREIGN KEY (AkunID) REFERENCES Akun(AkunID) 
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+);
